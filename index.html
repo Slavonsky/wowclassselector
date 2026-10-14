@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WoW Classic Party Planner - Sasha's Choice</title>
+    <style>
+        :root {
+            --bg-color: #0d0f12;
+            --card-bg: #181b20;
+            --border-color: #2a2e37;
+            --accent-gold: #f8b700;
+            --text-main: #e1e4e8;
+            --text-muted: #8b949e;
+            --danger-red: #ff4d4d;
+            --success-green: #2ec4b6;
+            --warning-yellow: #ffb703;
+        }
+
+        /* WoW Class Colors */
+        .color-warrior { color: #C69E6D; }
+        .color-paladin { color: #F48CBA; }
+        .color-hunter { color: #AAD372; }
+        .color-rogue { color: #FFF468; }
+        .color-priest { color: #FFFFFF; }
+        .color-shaman { color: #0070DD; }
+        .color-mage { color: #3FC7EB; }
+        .color-warlock { color: #8788EE; }
+        .color-druid { color: #FF7C0A; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            max-width: 900px;
+            width: 100%;
+        }
+
+        header {
+            text-align: center;
+            padding: 20px 0;
+            border-bottom: 2px solid var(--accent-gold);
+            margin-bottom: 25px;
+        }
+
+        h1 {
+            color: var(--accent-gold);
+            margin: 0 0 10px 0;
+            font-size: 2rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        .section {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            margin-top: 0;
+            color: var(--accent-gold);
+            font-size: 1.3rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 8px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 15px;
+        }
+
+        .player-card {
+            background-color: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 15px;
+        }
+
+        .player-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .player-name {
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .badge {
+            font-size: 0.75rem;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .badge-veteran { background-color: #3b82f6; color: white; }
+        .badge-newbie { background-color: #ec4899; color: white; }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+        }
+
+        select {
+            width: 100%;
+            padding: 8px;
+            background-color: #0f1115;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            color: var(--text-main);
+            font-size: 0.95rem;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+        }
+
+        select:focus {
+            outline: 1px solid var(--accent-gold);
+        }
+
+        .status-box {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .warning-list {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .warning-item {
+            padding: 10px 12px;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            font-size: 0.9rem;
+        }
+
+        .warning-item.danger {
+            background-color: rgba(255, 77, 77, 0.15);
+            border-left: 4px solid var(--danger-red);
+            color: #ff9999;
+        }
+
+        .warning-item.success {
+            background-color: rgba(46, 196, 182, 0.15);
+            border-left: 4px solid var(--success-green);
+            color: #80ed99;
+        }
+
+        .summary-stats {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .stat-badge {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+
+        .stat-badge span {
+            font-weight: bold;
+            color: var(--accent-gold);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>WoW Classic Party Planner</h1>
+        <div class="subtitle">Sasha builds the group, but rules keep us alive!</div>
+    </header>
+
+    <!-- STEP 1: Veto Selection -->
+    <div class="section">
+        <h2>Step 1: Veteran Vetoes</h2>
+        <p style="font-size: 0.85rem; color: var(--text-muted);">Each veteran can block 1 class they refuse to play.</p>
+        <div class="grid" id="veto-grid"></div>
+    </div>
+
+    <!-- STEP 2: Sasha's Class Assignment -->
+    <div class="section">
+        <h2>Step 2: Sasha's Class Assignments</h2>
+        <p style="font-size: 0.85rem; color: var(--text-muted);">Sasha assigns classes to all players (vetoed classes are blocked).</p>
+        <div class="grid" id="assignment-grid"></div>
+    </div>
+
+    <!-- STEP 3: Rule Validations & Warnings -->
+    <div class="status-box">
+        <h2>Party Composition Check</h2>
+        <ul class="warning-list" id="warning-list"></ul>
+        <div class="summary-stats" id="summary-stats"></div>
+    </div>
+</div>
+
+<script>
+    // Config: Party Members & Classes
+    const PARTY_CONFIG = [
+        { name: 'Slava', isNewbie: false },
+        { name: 'Evgen', isNewbie: false },
+        { name: 'Nikita', isNewbie: false },
+        { name: 'Kolyan', isNewbie: false },
+        { name: 'Natasha', isNewbie: false },
+        { name: 'Sasha', isNewbie: true }
+    ];
+
+    const CLASSES = {
+        'Warrior': { armor: 'Plate', role: 'Melee', canTank: true, canHeal: false, cssClass: 'color-warrior' },
+        'Paladin': { armor: 'Plate', role: 'Melee', canTank: true, canHeal: true, cssClass: 'color-paladin' },
+        'Hunter': { armor: 'Mail', role: 'Ranged', canTank: false, canHeal: false, cssClass: 'color-hunter' },
+        'Rogue': { armor: 'Leather', role: 'Melee', canTank: false, canHeal: false, cssClass: 'color-rogue' },
+        'Priest': { armor: 'Cloth', role: 'Ranged', canTank: false, canHeal: true, cssClass: 'color-priest' },
+        'Shaman': { armor: 'Mail', role: 'Hybrid', canTank: false, canHeal: true, cssClass: 'color-shaman' },
+        'Mage': { armor: 'Cloth', role: 'Ranged', canTank: false, canHeal: false, cssClass: 'color-mage' },
+        'Warlock': { armor: 'Cloth', role: 'Ranged', canTank: false, canHeal: false, cssClass: 'color-warlock' },
+        'Druid': { armor: 'Leather', role: 'Hybrid', canTank: true, canHeal: true, cssClass: 'color-druid' }
+    };
+
+    // State
+    const state = {
+        vetoes: {},
+        assignments: {}
+    };
+
+    // Initialize state defaults
+    PARTY_CONFIG.forEach(p => {
+        state.vetoes[p.name] = 'None';
+        state.assignments[p.name] = '';
+    });
+
+    function initUI() {
+        const vetoGrid = document.getElementById('veto-grid');
+        const assignmentGrid = document.getElementById('assignment-grid');
+
+        vetoGrid.innerHTML = '';
+        assignmentGrid.innerHTML = '';
+
+        PARTY_CONFIG.forEach(player => {
+            // Render Veto Card (Only for Veterans)
+            if (!player.isNewbie) {
+                const vetoCard = document.createElement('div');
+                vetoCard.className = 'player-card';
+                vetoCard.innerHTML = `
+                    <div class="player-header">
+                        <span class="player-name">${player.name}</span>
+                        <span class="badge badge-veteran">Veteran</span>
+                    </div>
+                    <label>Banned Class (Veto):</label>
+                    <select id="veto-${player.name}" onchange="handleVetoChange('${player.name}', this.value)">
+                        <option value="None">-- None --</option>
+                        ${Object.keys(CLASSES).map(c => `<option value="${c}">${c}</option>`).join('')}
+                    </select>
+                `;
+                vetoGrid.appendChild(vetoCard);
+            }
+
+            // Render Assignment Card (For All Players)
+            const assignCard = document.createElement('div');
+            assignCard.className = 'player-card';
+            assignCard.innerHTML = `
+                <div class="player-header">
+                    <span class="player-name">${player.name}</span>
+                    <span class="badge ${player.isNewbie ? 'badge-newbie' : 'badge-veteran'}">
+                        ${player.isNewbie ? 'Newbie' : 'Veteran'}
+                    </span>
+                </div>
+                <label>Assigned Class:</label>
+                <select id="assign-${player.name}" onchange="handleAssignChange('${player.name}', this.value)">
+                    <option value="">-- Select Class --</option>
+                    ${Object.keys(CLASSES).map(c => `<option value="${c}">${c}</option>`).join('')}
+                </select>
+                <div id="veto-notice-${player.name}" style="font-size:0.75rem; color:var(--danger-red); min-height: 18px;"></div>
+            `;
+            assignmentGrid.appendChild(assignCard);
+        });
+
+        updateAssignmentDropdowns();
+        validateParty();
+    }
+
+    function handleVetoChange(playerName, value) {
+        state.vetoes[playerName] = value;
+        // If assigned class matches new veto, reset assignment
+        if (state.assignments[playerName] === value) {
+            state.assignments[playerName] = '';
+            document.getElementById(`assign-${playerName}`).value = '';
+        }
+        updateAssignmentDropdowns();
+        validateParty();
+    }
+
+    function handleAssignChange(playerName, value) {
+        state.assignments[playerName] = value;
+        validateParty();
+    }
+
+    function updateAssignmentDropdowns() {
+        PARTY_CONFIG.forEach(player => {
+            const select = document.getElementById(`assign-${player.name}`);
+            const notice = document.getElementById(`veto-notice-${player.name}`);
+            const bannedClass = state.vetoes[player.name];
+
+            if (!player.isNewbie && bannedClass && bannedClass !== 'None') {
+                notice.innerText = `Vetoed: ${bannedClass}`;
+            } else {
+                notice.innerText = '';
+            }
+
+            Array.from(select.options).forEach(opt => {
+                if (opt.value === '') return;
+                if (!player.isNewbie && opt.value === bannedClass) {
+                    opt.disabled = true;
+                    opt.text = `${opt.value} (Vetoed)`;
+                } else {
+                    opt.disabled = false;
+                    opt.text = opt.value;
+                }
+            });
+        });
+    }
+
+    function validateParty() {
+        const warningList = document.getElementById('warning-list');
+        const summaryStats = document.getElementById('summary-stats');
+        warningList.innerHTML = '';
+
+        const selectedClasses = Object.values(state.assignments).filter(c => c !== '');
+        const warnings = [];
+
+        if (selectedClasses.length < PARTY_CONFIG.length) {
+            warnings.push({
+                type: 'danger',
+                msg: `Sasha has assigned ${selectedClasses.length} of ${PARTY_CONFIG.length} players.`
+            });
+        }
+
+        // 3-a) >3 Melee classes
+        let meleeCount = 0;
+        let rangedCount = 0;
+        selectedClasses.forEach(c => {
+            if (CLASSES[c].role === 'Melee') meleeCount++;
+            if (CLASSES[c].role === 'Ranged') rangedCount++;
+        });
+
+        if (meleeCount > 3) {
+            warnings.push({ type: 'danger', msg: `Warning: Too many melee classes selected (${meleeCount}/3 max)!` });
+        }
+        if (rangedCount > 3) {
+            warnings.push({ type: 'danger', msg: `Warning: Too many ranged classes selected (${rangedCount}/3 max)!` });
+        }
+
+        // 3-c) Armor coverage check
+        const armorTypes = new Set(selectedClasses.map(c => CLASSES[c].armor));
+        const requiredArmor = ['Cloth', 'Leather', 'Mail', 'Plate'];
+        const missingArmor = requiredArmor.filter(a => !armorTypes.has(a));
+
+        if (missingArmor.length > 0 && selectedClasses.length > 0) {
+            warnings.push({ type: 'danger', msg: `Missing armor types: ${missingArmor.join(', ')}.` });
+        }
+
+        // 3-d) Tank check (Warrior, Paladin, Druid)
+        const hasTank = selectedClasses.some(c => CLASSES[c].canTank);
+        if (!hasTank && selectedClasses.length > 0) {
+            warnings.push({ type: 'danger', msg: `No Tank class assigned! Need Warrior, Paladin, or Druid.` });
+        }
+
+        // 3-e) Healer check (Priest, Paladin, Shaman, Druid)
+        const hasHealer = selectedClasses.some(c => CLASSES[c].canHeal);
+        if (!hasHealer && selectedClasses.length > 0) {
+            warnings.push({ type: 'danger', msg: `No Healer class assigned! Need Priest, Paladin, Shaman, or Druid.` });
+        }
+
+        if (warnings.length === 0 && selectedClasses.length === PARTY_CONFIG.length) {
+            warnings.push({ type: 'success', msg: `Party composition is fully valid and balanced! Ready to go!` });
+        }
+
+        warnings.forEach(w => {
+            const li = document.createElement('li');
+            li.className = `warning-item ${w.type}`;
+            li.innerText = w.msg;
+            warningList.appendChild(li);
+        });
+
+        // Summary Statistics
+        summaryStats.innerHTML = `
+            <div class="stat-badge">Melee: <span>${meleeCount}</span></div>
+            <div class="stat-badge">Ranged: <span>${rangedCount}</span></div>
+            <div class="stat-badge">Armor Types: <span>${armorTypes.size}/4</span></div>
+            <div class="stat-badge">Tank Available: <span>${hasTank ? 'Yes' : 'No'}</span></div>
+            <div class="stat-badge">Healer Available: <span>${hasHealer ? 'Yes' : 'No'}</span></div>
+        `;
+    }
+
+    initUI();
+</script>
+
+</body>
+</html>
