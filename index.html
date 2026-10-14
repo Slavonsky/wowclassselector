@@ -17,7 +17,6 @@
             --warning-yellow: #ffb703;
         }
 
-        /* WoW Class Colors */
         .color-warrior { color: #C69E6D; }
         .color-paladin { color: #F48CBA; }
         .color-hunter { color: #AAD372; }
@@ -225,7 +224,6 @@
 </div>
 
 <script>
-    // Config: Party Members & Classes
     const PARTY_CONFIG = [
         { name: 'Slava', isNewbie: false },
         { name: 'Evgen', isNewbie: false },
@@ -247,13 +245,11 @@
         'Druid': { armor: 'Leather', role: 'Hybrid', canTank: true, canHeal: true, cssClass: 'color-druid' }
     };
 
-    // State
     const state = {
         vetoes: {},
         assignments: {}
     };
 
-    // Initialize state defaults
     PARTY_CONFIG.forEach(p => {
         state.vetoes[p.name] = 'None';
         state.assignments[p.name] = '';
@@ -267,7 +263,6 @@
         assignmentGrid.innerHTML = '';
 
         PARTY_CONFIG.forEach(player => {
-            // Render Veto Card (Only for Veterans)
             if (!player.isNewbie) {
                 const vetoCard = document.createElement('div');
                 vetoCard.className = 'player-card';
@@ -285,7 +280,6 @@
                 vetoGrid.appendChild(vetoCard);
             }
 
-            // Render Assignment Card (For All Players)
             const assignCard = document.createElement('div');
             assignCard.className = 'player-card';
             assignCard.innerHTML = `
@@ -311,7 +305,6 @@
 
     function handleVetoChange(playerName, value) {
         state.vetoes[playerName] = value;
-        // If assigned class matches new veto, reset assignment
         if (state.assignments[playerName] === value) {
             state.assignments[playerName] = '';
             document.getElementById(`assign-${playerName}`).value = '';
@@ -355,7 +348,8 @@
         const summaryStats = document.getElementById('summary-stats');
         warningList.innerHTML = '';
 
-        const selectedClasses = Object.values(state.assignments).filter(c => c !== '');
+        const assignedPlayers = Object.entries(state.assignments).filter(([_, className]) => className !== '');
+        const selectedClasses = assignedPlayers.map(([_, className]) => className);
         const warnings = [];
 
         if (selectedClasses.length < PARTY_CONFIG.length) {
@@ -365,7 +359,7 @@
             });
         }
 
-        // 3-a) >3 Melee classes
+        // Role Counts
         let meleeCount = 0;
         let rangedCount = 0;
         selectedClasses.forEach(c => {
@@ -380,7 +374,7 @@
             warnings.push({ type: 'danger', msg: `Warning: Too many ranged classes selected (${rangedCount}/3 max)!` });
         }
 
-        // 3-c) Armor coverage check
+        // Armor coverage check
         const armorTypes = new Set(selectedClasses.map(c => CLASSES[c].armor));
         const requiredArmor = ['Cloth', 'Leather', 'Mail', 'Plate'];
         const missingArmor = requiredArmor.filter(a => !armorTypes.has(a));
@@ -389,16 +383,37 @@
             warnings.push({ type: 'danger', msg: `Missing armor types: ${missingArmor.join(', ')}.` });
         }
 
-        // 3-d) Tank check (Warrior, Paladin, Druid)
-        const hasTank = selectedClasses.some(c => CLASSES[c].canTank);
-        if (!hasTank && selectedClasses.length > 0) {
-            warnings.push({ type: 'danger', msg: `No Tank class assigned! Need Warrior, Paladin, or Druid.` });
+        // Distinct Tank and Healer check
+        const tankCandidates = assignedPlayers.filter(([_, c]) => CLASSES[c].canTank).map(([name, _]) => name);
+        const healerCandidates = assignedPlayers.filter(([_, c]) => CLASSES[c].canHeal).map(([name, _]) => name);
+
+        const hasTankCandidate = tankCandidates.length > 0;
+        const hasHealerCandidate = healerCandidates.length > 0;
+
+        // Check if tank and healer can be assigned to different persons
+        let validRoleAssignment = false;
+        if (hasTankCandidate && hasHealerCandidate) {
+            for (let tankPerson of tankCandidates) {
+                for (let healerPerson of healerCandidates) {
+                    if (tankPerson !== healerPerson) {
+                        validRoleAssignment = true;
+                        break;
+                    }
+                }
+                if (validRoleAssignment) break;
+            }
         }
 
-        // 3-e) Healer check (Priest, Paladin, Shaman, Druid)
-        const hasHealer = selectedClasses.some(c => CLASSES[c].canHeal);
-        if (!hasHealer && selectedClasses.length > 0) {
-            warnings.push({ type: 'danger', msg: `No Healer class assigned! Need Priest, Paladin, Shaman, or Druid.` });
+        if (selectedClasses.length > 0) {
+            if (!hasTankCandidate) {
+                warnings.push({ type: 'danger', msg: `No Tank class assigned! Need Warrior, Paladin, or Druid.` });
+            }
+            if (!hasHealerCandidate) {
+                warnings.push({ type: 'danger', msg: `No Healer class assigned! Need Priest, Paladin, Shaman, or Druid.` });
+            }
+            if (hasTankCandidate && hasHealerCandidate && !validRoleAssignment) {
+                warnings.push({ type: 'danger', msg: `Tank and Healer must be assigned to two DIFFERENT players! (Currently relying on 1 hybrid player for both roles).` });
+            }
         }
 
         if (warnings.length === 0 && selectedClasses.length === PARTY_CONFIG.length) {
@@ -417,8 +432,7 @@
             <div class="stat-badge">Melee: <span>${meleeCount}</span></div>
             <div class="stat-badge">Ranged: <span>${rangedCount}</span></div>
             <div class="stat-badge">Armor Types: <span>${armorTypes.size}/4</span></div>
-            <div class="stat-badge">Tank Available: <span>${hasTank ? 'Yes' : 'No'}</span></div>
-            <div class="stat-badge">Healer Available: <span>${hasHealer ? 'Yes' : 'No'}</span></div>
+            <div class="stat-badge">Separate Tank & Healer: <span>${validRoleAssignment ? 'Yes' : 'No'}</span></div>
         `;
     }
 
