@@ -14,18 +14,7 @@
             --text-muted: #8b949e;
             --danger-red: #ff4d4d;
             --success-green: #2ec4b6;
-            --warning-yellow: #ffb703;
         }
-
-        .color-warrior { color: #C69E6D; }
-        .color-paladin { color: #F48CBA; }
-        .color-hunter { color: #AAD372; }
-        .color-rogue { color: #FFF468; }
-        .color-priest { color: #FFFFFF; }
-        .color-shaman { color: #0070DD; }
-        .color-mage { color: #3FC7EB; }
-        .color-warlock { color: #8788EE; }
-        .color-druid { color: #FF7C0A; }
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -38,7 +27,7 @@
         }
 
         .container {
-            max-width: 900px;
+            max-width: 800px;
             width: 100%;
         }
 
@@ -80,7 +69,7 @@
 
         .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
             gap: 15px;
         }
 
@@ -129,12 +118,18 @@
             border-radius: 4px;
             color: var(--text-main);
             font-size: 0.95rem;
-            margin-bottom: 10px;
+            margin-bottom: 5px;
             box-sizing: border-box;
         }
 
         select:focus {
             outline: 1px solid var(--accent-gold);
+        }
+
+        .veto-tag {
+            font-size: 0.8rem;
+            color: var(--danger-red);
+            min-height: 18px;
         }
 
         .status-box {
@@ -198,32 +193,36 @@
 <div class="container">
     <header>
         <h1>WoW Classic Party Planner</h1>
-        <div class="subtitle">Sasha builds the group, but rules keep us alive!</div>
+        <div class="subtitle">Sasha: Pick classes for the group!</div>
     </header>
 
-    <!-- STEP 1: Veto Selection -->
+    <!-- Class Assignment Section -->
     <div class="section">
-        <h2>Step 1: Veteran Vetoes</h2>
-        <p style="font-size: 0.85rem; color: var(--text-muted);">Each veteran can block 1 class they refuse to play.</p>
-        <div class="grid" id="veto-grid"></div>
-    </div>
-
-    <!-- STEP 2: Sasha's Class Assignment -->
-    <div class="section">
-        <h2>Step 2: Sasha's Class Assignments</h2>
-        <p style="font-size: 0.85rem; color: var(--text-muted);">Sasha assigns classes to all players (vetoed classes are blocked).</p>
+        <h2>Assign Classes</h2>
         <div class="grid" id="assignment-grid"></div>
     </div>
 
-    <!-- STEP 3: Rule Validations & Warnings -->
+    <!-- Rule Validations & Warnings -->
     <div class="status-box">
-        <h2>Party Composition Check</h2>
+        <h2>Composition Rules Check</h2>
         <ul class="warning-list" id="warning-list"></ul>
         <div class="summary-stats" id="summary-stats"></div>
     </div>
 </div>
 
 <script>
+    // ----------------------------------------------------
+    // HARDCODED CONFIGURATION
+    // Modify player vetoes here ('None' or exact class name)
+    // ----------------------------------------------------
+    const HARDCODED_VETOES = {
+        'Slava': 'Warrior',
+        'Evgen': 'Mage',
+        'Nikita': 'None',
+        'Kolyan': 'None',
+        'Natasha': 'None'
+    };
+
     const PARTY_CONFIG = [
         { name: 'Slava', isNewbie: false },
         { name: 'Evgen', isNewbie: false },
@@ -234,51 +233,32 @@
     ];
 
     const CLASSES = {
-        'Warrior': { armor: 'Plate', role: 'Melee', canTank: true, canHeal: false, cssClass: 'color-warrior' },
-        'Paladin': { armor: 'Plate', role: 'Melee', canTank: true, canHeal: true, cssClass: 'color-paladin' },
-        'Hunter': { armor: 'Mail', role: 'Ranged', canTank: false, canHeal: false, cssClass: 'color-hunter' },
-        'Rogue': { armor: 'Leather', role: 'Melee', canTank: false, canHeal: false, cssClass: 'color-rogue' },
-        'Priest': { armor: 'Cloth', role: 'Ranged', canTank: false, canHeal: true, cssClass: 'color-priest' },
-        'Shaman': { armor: 'Mail', role: 'Hybrid', canTank: false, canHeal: true, cssClass: 'color-shaman' },
-        'Mage': { armor: 'Cloth', role: 'Ranged', canTank: false, canHeal: false, cssClass: 'color-mage' },
-        'Warlock': { armor: 'Cloth', role: 'Ranged', canTank: false, canHeal: false, cssClass: 'color-warlock' },
-        'Druid': { armor: 'Leather', role: 'Hybrid', canTank: true, canHeal: true, cssClass: 'color-druid' }
+        'Warrior': { armor: 'Plate', role: 'Melee', canTank: true, canHeal: false },
+        'Paladin': { armor: 'Plate', role: 'Melee', canTank: true, canHeal: true },
+        'Hunter': { armor: 'Mail', role: 'Ranged', canTank: false, canHeal: false },
+        'Rogue': { armor: 'Leather', role: 'Melee', canTank: false, canHeal: false },
+        'Priest': { armor: 'Cloth', role: 'Ranged', canTank: false, canHeal: true },
+        'Shaman': { armor: 'Mail', role: 'Hybrid', canTank: false, canHeal: true },
+        'Mage': { armor: 'Cloth', role: 'Ranged', canTank: false, canHeal: false },
+        'Warlock': { armor: 'Cloth', role: 'Ranged', canTank: false, canHeal: false },
+        'Druid': { armor: 'Leather', role: 'Hybrid', canTank: true, canHeal: true }
     };
 
     const state = {
-        vetoes: {},
         assignments: {}
     };
 
     PARTY_CONFIG.forEach(p => {
-        state.vetoes[p.name] = 'None';
         state.assignments[p.name] = '';
     });
 
     function initUI() {
-        const vetoGrid = document.getElementById('veto-grid');
         const assignmentGrid = document.getElementById('assignment-grid');
-
-        vetoGrid.innerHTML = '';
         assignmentGrid.innerHTML = '';
 
         PARTY_CONFIG.forEach(player => {
-            if (!player.isNewbie) {
-                const vetoCard = document.createElement('div');
-                vetoCard.className = 'player-card';
-                vetoCard.innerHTML = `
-                    <div class="player-header">
-                        <span class="player-name">${player.name}</span>
-                        <span class="badge badge-veteran">Veteran</span>
-                    </div>
-                    <label>Banned Class (Veto):</label>
-                    <select id="veto-${player.name}" onchange="handleVetoChange('${player.name}', this.value)">
-                        <option value="None">-- None --</option>
-                        ${Object.keys(CLASSES).map(c => `<option value="${c}">${c}</option>`).join('')}
-                    </select>
-                `;
-                vetoGrid.appendChild(vetoCard);
-            }
+            const bannedClass = HARDCODED_VETOES[player.name] || 'None';
+            const hasVeto = !player.isNewbie && bannedClass !== 'None';
 
             const assignCard = document.createElement('div');
             assignCard.className = 'player-card';
@@ -292,55 +272,24 @@
                 <label>Assigned Class:</label>
                 <select id="assign-${player.name}" onchange="handleAssignChange('${player.name}', this.value)">
                     <option value="">-- Select Class --</option>
-                    ${Object.keys(CLASSES).map(c => `<option value="${c}">${c}</option>`).join('')}
+                    ${Object.keys(CLASSES).map(c => {
+                        const isDisabled = (c === bannedClass);
+                        return `<option value="${c}" ${isDisabled ? 'disabled' : ''}>${c}${isDisabled ? ' (Vetoed)' : ''}</option>`;
+                    }).join('')}
                 </select>
-                <div id="veto-notice-${player.name}" style="font-size:0.75rem; color:var(--danger-red); min-height: 18px;"></div>
+                <div class="veto-tag">
+                    ${hasVeto ? `Banned: ${bannedClass}` : ''}
+                </div>
             `;
             assignmentGrid.appendChild(assignCard);
         });
 
-        updateAssignmentDropdowns();
-        validateParty();
-    }
-
-    function handleVetoChange(playerName, value) {
-        state.vetoes[playerName] = value;
-        if (state.assignments[playerName] === value) {
-            state.assignments[playerName] = '';
-            document.getElementById(`assign-${playerName}`).value = '';
-        }
-        updateAssignmentDropdowns();
         validateParty();
     }
 
     function handleAssignChange(playerName, value) {
         state.assignments[playerName] = value;
         validateParty();
-    }
-
-    function updateAssignmentDropdowns() {
-        PARTY_CONFIG.forEach(player => {
-            const select = document.getElementById(`assign-${player.name}`);
-            const notice = document.getElementById(`veto-notice-${player.name}`);
-            const bannedClass = state.vetoes[player.name];
-
-            if (!player.isNewbie && bannedClass && bannedClass !== 'None') {
-                notice.innerText = `Vetoed: ${bannedClass}`;
-            } else {
-                notice.innerText = '';
-            }
-
-            Array.from(select.options).forEach(opt => {
-                if (opt.value === '') return;
-                if (!player.isNewbie && opt.value === bannedClass) {
-                    opt.disabled = true;
-                    opt.text = `${opt.value} (Vetoed)`;
-                } else {
-                    opt.disabled = false;
-                    opt.text = opt.value;
-                }
-            });
-        });
     }
 
     function validateParty() {
@@ -355,7 +304,7 @@
         if (selectedClasses.length < PARTY_CONFIG.length) {
             warnings.push({
                 type: 'danger',
-                msg: `Sasha has assigned ${selectedClasses.length} of ${PARTY_CONFIG.length} players.`
+                msg: `Assigned ${selectedClasses.length} of ${PARTY_CONFIG.length} players.`
             });
         }
 
@@ -368,10 +317,10 @@
         });
 
         if (meleeCount > 3) {
-            warnings.push({ type: 'danger', msg: `Warning: Too many melee classes selected (${meleeCount}/3 max)!` });
+            warnings.push({ type: 'danger', msg: `Too many melee classes selected (${meleeCount}/3 max)!` });
         }
         if (rangedCount > 3) {
-            warnings.push({ type: 'danger', msg: `Warning: Too many ranged classes selected (${rangedCount}/3 max)!` });
+            warnings.push({ type: 'danger', msg: `Too many ranged classes selected (${rangedCount}/3 max)!` });
         }
 
         // Armor coverage check
@@ -390,7 +339,6 @@
         const hasTankCandidate = tankCandidates.length > 0;
         const hasHealerCandidate = healerCandidates.length > 0;
 
-        // Check if tank and healer can be assigned to different persons
         let validRoleAssignment = false;
         if (hasTankCandidate && hasHealerCandidate) {
             for (let tankPerson of tankCandidates) {
@@ -412,7 +360,7 @@
                 warnings.push({ type: 'danger', msg: `No Healer class assigned! Need Priest, Paladin, Shaman, or Druid.` });
             }
             if (hasTankCandidate && hasHealerCandidate && !validRoleAssignment) {
-                warnings.push({ type: 'danger', msg: `Tank and Healer must be assigned to two DIFFERENT players! (Currently relying on 1 hybrid player for both roles).` });
+                warnings.push({ type: 'danger', msg: `Tank and Healer must be assigned to two DIFFERENT players!` });
             }
         }
 
@@ -427,12 +375,11 @@
             warningList.appendChild(li);
         });
 
-        // Summary Statistics
         summaryStats.innerHTML = `
             <div class="stat-badge">Melee: <span>${meleeCount}</span></div>
             <div class="stat-badge">Ranged: <span>${rangedCount}</span></div>
             <div class="stat-badge">Armor Types: <span>${armorTypes.size}/4</span></div>
-            <div class="stat-badge">Separate Tank & Healer: <span>${validRoleAssignment ? 'Yes' : 'No'}</span></div>
+            <div class="stat-badge">Distinct Tank & Healer: <span>${validRoleAssignment ? 'Yes' : 'No'}</span></div>
         `;
     }
 
